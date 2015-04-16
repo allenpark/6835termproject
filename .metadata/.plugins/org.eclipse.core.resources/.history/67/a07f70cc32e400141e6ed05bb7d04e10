@@ -1,0 +1,83 @@
+package handsfree;
+
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
+
+public class ControllerThread extends Thread {
+    public static final boolean HEAD_ENABLED = true;
+    public static final boolean SPEECH_ENABLED = false;
+    private HeadGestureThread headListener;
+    private SpeechThread speechListener;
+    private Robot robot;
+    private boolean zoomed; 
+
+    public ControllerThread() {
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        zoomed = 0;
+    }
+
+    private void onHeadGesture(HeadGesture headGesture) {
+        System.out.println("Head gesture: " + headGesture.name());
+        switch (headGesture) {
+        case NOD_DOWN:
+            robot.keyPress(KeyEvent.VK_PAGE_DOWN);
+            robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
+            break;
+        case NOD_UP:
+            robot.keyPress(KeyEvent.VK_PAGE_UP);
+            robot.keyRelease(KeyEvent.VK_PAGE_UP);
+            break;
+        case NONE:
+            break;
+        case ZOOM_IN:
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.keyPress(KeyEvent.VK_EQUALS);
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+            robot.keyRelease(KeyEvent.VK_EQUALS);
+            break;
+        case ZOOM_OUT:
+            break;
+        }
+    }
+
+    private void onSpeech(String speech) {
+        System.out.println(speech);
+    }
+
+    public void run() {
+        headListener = new HeadGestureThread();
+        if (ControllerThread.HEAD_ENABLED) {
+            headListener.start();
+        }
+        speechListener = new SpeechThread();
+        if (ControllerThread.SPEECH_ENABLED) {
+            speechListener.start();
+        }
+        String oldSpeech = null;
+        while (true) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            String speech = speechListener.getSpeech();
+            HeadGesture headGesture = headListener.getGesture();
+            if (oldSpeech != null && speech != null
+                    && !oldSpeech.equals(speech)) {
+                onSpeech(speech);
+                oldSpeech = speech;
+            }
+            if (headGesture != null && headGesture != HeadGesture.NONE) {
+                onHeadGesture(headGesture);
+            }
+        }
+    }
+
+}

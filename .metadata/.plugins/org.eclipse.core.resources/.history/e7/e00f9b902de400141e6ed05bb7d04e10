@@ -1,0 +1,141 @@
+package handsfree;
+
+import java.net.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+
+public class HeadGestureThread extends Thread {
+    private LinkedList<double[]> data;
+    private HeadGesture gesture;
+    private int timeSinceLastGesture;
+    private static final int MIN_TIME = 100;
+
+    public HeadGestureThread() {
+        this.data = new LinkedList<double[]>();
+        this.gesture = HeadGesture.NONE;
+        this.timeSinceLastGesture = this.MIN_TIME;
+    }
+
+    public void run() {
+        try {
+            @SuppressWarnings("resource")
+            DatagramSocket serverSocket = new DatagramSocket(5550);
+            byte[] receiveData = new byte[1024];
+            byte[] sendData = new byte[1024];
+            while (true) {
+                DatagramPacket receivePacket = new DatagramPacket(receiveData,
+                        receiveData.length);
+                serverSocket.receive(receivePacket);
+                String sentence = new String(receivePacket.getData());
+                int offset = receivePacket.getOffset();
+                double[] readData = new double[6];
+                for (int count = 0; count < readData.length; count++) {
+                    int d = offset + count * 8;
+                    long accum = 0;
+                    int shiftBy = 0;
+                    for (int i = d; i < d + 8; i++) {
+                        accum |= ((long) (receiveData[i] & 0xff)) << shiftBy;
+                        shiftBy += 8;
+                    }
+                    readData[count] = Double.longBitsToDouble(accum);
+                }
+                synchronized (this.gesture) {
+                    this.data.push(readData);
+                    //System.out.println(this.data.getFirst()[4]);
+                    if (this.data.size() > 100) {
+                        this.data.removeLast();
+                    }
+                    this.processGesture();
+                }
+                InetAddress IPAddress = receivePacket.getAddress();
+                int port = receivePacket.getPort();
+                String capitalizedSentence = sentence.toUpperCase();
+                sendData = capitalizedSentence.getBytes();
+                DatagramPacket sendPacket = new DatagramPacket(sendData,
+                        sendData.length, IPAddress, port);
+                serverSocket.send(sendPacket);
+            }
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+    }
+
+    // Synchronized on this.gesture
+    private void processGesture() {
+        if (this.data.size() < 10) {
+            return;
+        }
+        
+        // Testing for nods
+        int pitch = 4;
+        double min = this.data.getFirst()[pitch];
+        int minLoc = 0;
+        double max = this.data.getFirst()[pitch];
+        int maxLoc = 0;
+        Iterator<double[]> it = this.data.listIterator(0);
+        int i = 0;
+        while (it.hasNext()) {
+            double[] x = it.next();
+            if (x[pitch] < min) {
+                min = x[pitch];
+                minLoc = i;
+            }
+            if (x[pitch] > max) {
+                max = x[pitch];
+                maxLoc = i;
+            }
+            i++;
+        }
+        boolean lowerHighExists = false;
+        boolean upperHighExists = false;
+        boolean lowerLowExists = false;
+        boolean upperLowExists = false;
+        it = this.data.listIterator(0);
+        i = 0;
+        while (it.hasNext() && !(lowerHighExists && upperHighExists) && !(lowerLowExists && upperLowExists)) {
+            double[] x = it.next();
+            if (x[pitch] > min + 15) {
+                if (i < minLoc) {
+                    lowerHighExists = true;
+                } else if (i > minLoc) {
+                    upperHighExists = true;
+                }
+            }
+            if (x[pitch] < max - 15) {
+                if (i < maxLoc) {
+                    lowerLowExists = true;
+                } else if (i > maxLoc) {
+                    upperLowExists = true;
+                }
+            }
+            i++;
+        }
+        if (lowerHighExists && upperHighExists) {
+            this.gesture = HeadGesture.NOD_DOWN;
+            this.data = new LinkedList<double[]>();
+        } else if (lowerLowExists && upperLowExists) {
+            this.gesture = HeadGesture.NOD_UP;
+            this.data = new LinkedList<double[]>();
+        }
+    }
+
+    public void printData() {
+        if (this.data.size() == 0) {
+            return;
+        }
+        String out = "";
+        double[] last = this.data.getLast();
+        for (int i = 0; i < last.length; i++) {
+            out += String.format("%3.1f ", last[i]);
+        }
+        System.out.println(out);
+    }
+
+    public HeadGesture getGesture() {
+        synchronized (this.gesture) {
+            HeadGesture r = this.gesture;
+            this.gesture = HeadGesture.NONE;
+            return r;
+        }
+    }
+}
