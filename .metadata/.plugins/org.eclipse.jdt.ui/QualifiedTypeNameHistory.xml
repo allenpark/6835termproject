@@ -9,4 +9,7 @@
 <fullyQualifiedTypeName name="java.awt.Robot"/>
 <fullyQualifiedTypeName name="java.awt.Event"/>
 <fullyQualifiedTypeName name="java.awt.event.KeyEvent"/>
+<fullyQualifiedTypeName name="javax.swing.JFrame"/>
+<fullyQualifiedTypeName name="java.util.ArrayList"/>
+<fullyQualifiedTypeName name="java.util.Timer"/>
 </qualifiedTypeNameHistroy>

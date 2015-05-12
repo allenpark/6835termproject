@@ -20,11 +20,13 @@ public class SpeechThread extends Thread {
         configuration
                 .setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
         // Set path to dictionary.
-        configuration
-                .setDictionaryPath("cmudict-en-us2.dict");
+        //configuration.setDictionaryPath("owndict.dict");
+        configuration.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
         // Set language model.
-        configuration
-                .setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.dmp");
+        //configuration.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.dmp");
+        configuration.setGrammarName("rawr");
+        configuration.setGrammarPath("file:///C:/Users/Allen/Dropbox/backup/MIT Random/6.835/termproject/6835termproject/handsfree");
+        configuration.setUseGrammar(true);
 
         try {
             LiveSpeechRecognizer recognizer = new LiveSpeechRecognizer(

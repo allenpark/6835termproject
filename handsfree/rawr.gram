@@ -1,0 +1,6 @@
+#JSGF V1.0;
+grammar handsfree;
+public <control> = <name> (activate | stop);
+public <command> = (go down | go up | zoom in | zoom out | first page | last page | make note <NULL> | finish note | go to page <digits>* | make bookmark here | go to bookmark <digits>* | head mode activate | head mode stop | a little more);
+<name> = hands free;
+<digits> = one | two | three | four | five | six | seven | eight | nine | zero;

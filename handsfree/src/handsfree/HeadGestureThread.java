@@ -157,6 +157,14 @@ public class HeadGestureThread extends Thread {
         }
         System.out.println(out);
     }
+    
+    public boolean hasData() {
+        return this.data.size() > 0;
+    }
+    
+    public double[] lastData() {
+        return this.data.getFirst();
+    }
 
     public HeadGesture getGesture() {
         synchronized (this.gesture) {

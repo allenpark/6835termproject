@@ -1,5 +1,0 @@
-package handsfree;
-
-public enum HeadGesture {
-    NONE, NOD_DOWN, NOD_UP
-}

@@ -1,9 +1,0 @@
-package handsfree;
-
-import java.lang.Thread;
-
-public class SpeechThread extends Thread{
-    public void run() {
-        
-    }
-}
